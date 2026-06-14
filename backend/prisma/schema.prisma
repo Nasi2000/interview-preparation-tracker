@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Topic {
+  id          Int        @id @default(autoincrement())
+  title       String     // "JavaScript Closures"
+  category    String     // "JS", "Vue", "CSS", "Algorithms", "Network"...
+  description String?
+  status      Status     @default(NOT_STARTED) // NOT_STARTED, IN_PROGRESS, DONE
+  notes       String?    // markdown-конспект
+  priority    Int        @default(0) // насколько важно повторить
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  questions   Question[]
+  reviews     Review[]
+}
+
+model Question {
+  id          Int        @id @default(autoincrement())
+  topicId     Int
+  topic       Topic      @relation(fields: [topicId], references: [id])
+  text        String     // "Что такое event loop?"
+  answer      String?    // твой ответ/конспект
+  difficulty  Difficulty @default(MEDIUM) // EASY, MEDIUM, HARD
+  status      Status     @default(NOT_STARTED)
+  type        QuestionType @default(THEORY) // THEORY, CODING, QUIZ
+  createdAt   DateTime   @default(now())
+
+  quizOptions QuizOption[]
+  attempts    Attempt[]
+}
+
+model QuizOption {
+  id          Int      @id @default(autoincrement())
+  questionId  Int
+  question    Question @relation(fields: [questionId], references: [id])
+  text        String
+  isCorrect   Boolean  @default(false)
+}
+
+model Attempt {
+  id          Int      @id @default(autoincrement())
+  questionId  Int
+  question    Question @relation(fields: [questionId], references: [id])
+  isCorrect   Boolean?
+  userCode    String?  // если это coding-задача
+  timeSpent   Int?     // секунды
+  createdAt   DateTime @default(now())
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  topicId     Int
+  topic       Topic    @relation(fields: [topicId], references: [id])
+  rating      Int      // 1-5, насколько хорошо помнишь (для spaced repetition)
+  nextReview  DateTime // когда повторить следующий раз
+  createdAt   DateTime @default(now())
+}
+
+model InterviewLog {
+  id          Int      @id @default(autoincrement())
+  company     String
+  date        DateTime
+  position    String?
+  questions   String?  // что спрашивали (текст/markdown)
+  result      String?  // "Прошла", "Отказ", "Жду ответ"
+  reflection  String?  // что было плохо/хорошо
+  createdAt   DateTime @default(now())
+}
+
+enum Status {
+  NOT_STARTED
+  IN_PROGRESS
+  DONE
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  THEORY
+  CODING
+  QUIZ
+}
